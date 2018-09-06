@@ -74,11 +74,6 @@ function cd_meta_box_save($post_id) {
 
     $current_user = wp_get_current_user();
 
-    $contributers[$current_user->user_login] = array(
-        'checked' => 'on',
-        'name' => $current_user->display_name
-    );
-
     update_post_meta($post_id, 'contributers', json_encode($contributers));
 }
 
@@ -93,26 +88,36 @@ function add_contributers_content($content) {
     $contributers = isset($values['contributers']) ? json_decode($values['contributers'][0]) : NULL;
 
     $no_contributers_flag = true;
-    if(isset($contributers)) {
+    if(!isset($contributers)) {
+        $post_author = get_user_by('ID', $post->post_author);
+        $contributers = array();
+        $contributers[$post_author->user_login] = array(
+            'checked' => 'on',
+            'name' => $post_author->display_name
+        );
+        $contributers = json_decode(json_encode($contributers));
+    } else {
+        $post_author = get_user_by('ID', $post->post_author);
+        $user_login = $post_author->user_login;
+        $contributers->$user_login = new stdClass();
+        $contributers->$user_login->checked = 'on';
+        $contributers->$user_login->name = $post_author->display_name;
+    }
+    $users = get_users();
+    $contributers_text .= '<ul style="margin-left: 20px;">';
 
-        $users = get_users();
-        $contributers_text .= '<ul style="margin-left: 20px;">';
-
-        foreach($users as $user) {
+    foreach($users as $user) {
+        if ($user->has_cap('edit_posts')) {
             $user_login = $user->data->user_login;
             $user_display_name = $user->data->display_name;
 
             if(isset($contributers->$user_login) && $contributers->$user_login->checked == 'on') {
-                $contributers_text .= '<li>' . $contributers->$user_login->name . '</li>';
+                $contributers_text .= '<li><a href="/author/' . $user_login . '">' . $contributers->$user_login->name . '<a/></li>';
                 $no_contributers_flag = false;
             }
         }
-        $contributers_text .= "</ul>";
     }
-    if($no_contributers_flag) {
-        $contributers_text .= "no contributers<br/>";
-    }
-
+    $contributers_text .= "</ul>";
     $contributers_text .= "</div>";
 
     return $content . $contributers_text;
