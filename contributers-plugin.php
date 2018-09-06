@@ -26,18 +26,16 @@ function cd_meta_box_cb($post)
         $user_display_name = $user->data->display_name;
 
         $check = isset($contributers->$user_login->checked) ? $contributers->$user_login->checked : '';
-        ?>
+        
+        $user_checkbox = "";
+        $user_checkbox .= '<div style="margin-top: 20px">';
+        $user_checkbox .= '<input style="vertical-align:top" name="contributer_' . $user_login . '" type="checkbox" ' . checked( $check, 'on', false) . ' />';
+        $user_checkbox .= '<div style="display: inline-block; margin-left: 10px">';
+        $user_checkbox .= $user_display_name . " ($user_login)<br/>";
+        //$user_checkbox .= $user_login . '<br/>';
+        $user_checkbox .= '</div></div><br/>';
 
-        <div style="margin-top: 20px">
-        <input style="vertical-align:top" name="contributer_<?=$user_login?>" type="checkbox" <?php checked( $check, 'on' ); ?> />
-        <div style="display: inline-block; margin-left: 10px">
-        <b><?=$user_display_name?></b><br/>
-        <?=$user_login?><br/>
-        </div>
-        </div>
-        <br/>
-
-        <?php
+        echo $user_checkbox;
     }
 }
 
@@ -89,7 +87,7 @@ function add_contributers_content($content) {
             $user_display_name = $user->data->display_name;
 
             if(isset($contributers->$user_login) && $contributers->$user_login->checked == 'on') {
-                $contributers_text .= '<li>' . $contributers->$user_login->name . ' (' . $user_login . ')' . '</li>';
+                $contributers_text .= '<li>' . $contributers->$user_login->name . '</li>';
                 $no_contributers_flag = false;
             }
         }
