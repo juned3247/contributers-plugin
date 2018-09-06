@@ -20,22 +20,30 @@ function cd_meta_box_cb($post)
 
     $contributers = isset($values['contributers']) ? json_decode($values['contributers'][0]) : array();
 
+    $current_user = wp_get_current_user();
 
     foreach($users as $user) {
-        $user_login = $user->data->user_login;
-        $user_display_name = $user->data->display_name;
+        if ($user->has_cap('edit_posts')) {
+            $user_login = $user->data->user_login;
+            $user_display_name = $user->data->display_name;
 
-        $check = isset($contributers->$user_login->checked) ? $contributers->$user_login->checked : '';
-        
-        $user_checkbox = "";
-        $user_checkbox .= '<div style="margin-top: 20px">';
-        $user_checkbox .= '<input style="vertical-align:top" name="contributer_' . $user_login . '" type="checkbox" ' . checked( $check, 'on', false) . ' />';
-        $user_checkbox .= '<div style="display: inline-block; margin-left: 10px">';
-        $user_checkbox .= $user_display_name . " ($user_login)<br/>";
-        //$user_checkbox .= $user_login . '<br/>';
-        $user_checkbox .= '</div></div><br/>';
+            $check = isset($contributers->$user_login->checked) ? $contributers->$user_login->checked : '';
 
-        echo $user_checkbox;
+            $user_checkbox = "";
+            $user_checkbox .= '<div style="margin-top: 20px">';
+            $user_checkbox .= '<input style="vertical-align:top" name="contributer_' . $user_login . '" type="checkbox" ' . checked( $check, 'on', false) . ' ' . disable_current_user($current_user, $user) . ' />';
+            $user_checkbox .= '<div style="display: inline-block; margin-left: 10px">';
+            $user_checkbox .= $user_display_name . " ($user_login)<br/>";
+            $user_checkbox .= '</div></div><br/>';
+
+            echo $user_checkbox;
+        }
+    }
+}
+
+function disable_current_user($current_user, $user) {
+    if($current_user->user_login == $user->data->user_login) {
+        return "checked disabled";
     }
 }
 
@@ -46,7 +54,7 @@ function cd_meta_box_save($post_id) {
     if( !isset( $_POST['meta_box_nonce'] ) || !wp_verify_nonce( $_POST['meta_box_nonce'], 'my_meta_box_nonce' ) ) return;
      
     // if our current user can't edit this post, bail
-    if( !current_user_can( 'edit_post' ) ) return;
+    if( !current_user_can( 'edit_posts' ) ) return;
 
     $users = get_users();
     $contributers = array();
@@ -63,6 +71,14 @@ function cd_meta_box_save($post_id) {
             'name' => $user_display_name
         );
     }
+
+    $current_user = wp_get_current_user();
+
+    $contributers[$current_user->user_login] = array(
+        'checked' => 'on',
+        'name' => $current_user->display_name
+    );
+
     update_post_meta($post_id, 'contributers', json_encode($contributers));
 }
 
